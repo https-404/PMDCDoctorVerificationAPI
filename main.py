@@ -10,7 +10,12 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 
+
 app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the PMC Registration Number Checker API!"}
 
 class RegistrationNumber(BaseModel):
     reg_num: str
@@ -72,13 +77,21 @@ def check_registration_number(reg_num):
 
 @app.post("/check_registration/")
 def check_registration(reg_num: RegistrationNumber):
-    
+    # if not validate_registration_number(reg_num.reg_num):
+    #     raise HTTPException(status_code=400, detail="Invalid registration number format")
     
     result = check_registration_number(reg_num.reg_num)
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return result
 
+# Expose the ASGI app
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+else:
+    # This makes the app compatible with Vercel's serverless environment
+    import os
+    if os.getenv("VERCEL"):
+        from mangum import Mangum
+        handler = Mangum(app)
